@@ -12,17 +12,21 @@ from endpoints.endpoint import Config
 def create_meme_endpoint():
     return CreateMeme
 
+
 @pytest.fixture()
 def delete_meme_endpoint():
     return DeleteMeme
+
 
 @pytest.fixture()
 def update_meme_endpoint():
     return UpdateMeme
 
+
 @pytest.fixture()
 def get_meme_endpoint():
     return GetMeme
+
 
 @pytest.fixture(scope="session", autouse=True)
 def ensure_token_once():
@@ -38,3 +42,22 @@ def ensure_token_once():
             raise Exception(f"Failed to update token: {auth_response.status_code}, {auth_response.text}")
     elif response.status_code != 200:
         raise Exception(f"Unexpected response while checking token: {response.status_code}, {response.text}")
+
+
+@pytest.fixture
+def create_and_delete_meme(create_meme_endpoint, delete_meme_endpoint):
+    def _create(data):
+        create_meme_instance = create_meme_endpoint()
+        create_meme_instance.new_meme(payload=data)
+        create_meme_instance.check_status_code(200)
+        create_meme_instance.check_updated_by_field_is_str()
+        meme_id = create_meme_instance.response.json().get('id')
+
+        yield meme_id
+
+        delete_meme_instance = delete_meme_endpoint()
+        delete_meme_instance.delete_meme(meme_id=meme_id)
+        delete_meme_instance.check_status_code(200)
+        delete_meme_instance.check_meme_absence(meme_id)
+
+    return _create

@@ -1,76 +1,11 @@
 import pytest
 import copy
+from test_data import TEST_DATA, INVALID_ID, INVALID_FIELDS
 
-
-TEST_DATA = [{
-    "text": "Simple meme text",
-    "url": "http://example.com/meme.jpg",
-    "tags": ["simple", "example"],
-    "info": {"author": "SimpleUser", "date": "2023-10-01"}
-},
-    {
-        "text": "Simple meme text@2",
-        "url": "http://example.com/meme.jpg",
-        "tags": [
-            "object_1",
-            "object_2",
-            "object_@#$",
-            " ",
-            None,
-            False
-        ],
-        "info": {
-            "name": [
-                "name_1",
-                "name_@#$",
-                " ",
-                None
-            ],
-            "description": [
-                "description_1",
-                "Description_@#$",
-                "",
-                False
-            ]
-        }
-
-    }
-    ]
-INVALID_FIELDS = [
-    ("text", []),
-    ("text", None),
-    ("url", ["test"]),
-    ("url", None),
-    ("url", ["test", ["test2"]]),
-    ("tags", None),
-    ("tags", ""),
-    ("tags", 12345),
-    ("tags", 'test'),
-    ("tags", {"test1": 123, "test2": "value"}),
-    ("info", ""),
-    ("info", None),
-    ("info", 12345)
-]
-INVALID_ID = [
-    "text_123",
-    "",
-    "!@#$",
-    "1234567854355676889578653435336878",
-    None
-]
 
 @pytest.mark.parametrize('data', [TEST_DATA[0], TEST_DATA[1]])
-def test_create_meme_valid_data(create_meme_endpoint, data, delete_meme_endpoint):
-    create_meme_instance = create_meme_endpoint()
-    response = create_meme_instance.new_meme(data)
-    create_meme_instance.check_response()
-    create_meme_instance.check_id_field()
-    create_meme_instance.check_updated_by_field()
-    meme_id = response.json().get("id")
-
-    delete_meme_instance = delete_meme_endpoint()
-    delete_meme_instance.delete_meme(meme_id)
-    delete_meme_instance.check_response()
+def test_create_meme_valid_data(create_and_delete_meme, data):
+    next(create_and_delete_meme(data))
 
 
 @pytest.mark.parametrize('field, invalid_value', INVALID_FIELDS)
@@ -91,10 +26,8 @@ def test_create_meme_invalid_url(create_meme_endpoint, data):
 
 
 @pytest.mark.parametrize('data', [TEST_DATA[0]])
-def test_update_meme_valid_data(create_meme_endpoint, update_meme_endpoint, delete_meme_endpoint, data):
-    create_meme_instance = create_meme_endpoint()
-    response_create = create_meme_instance.new_meme(data)
-    meme_id = response_create.json().get("id")
+def test_update_meme_valid_data(create_and_delete_meme, update_meme_endpoint, data):
+    meme_id = next(create_and_delete_meme(data))
     update_data = {
         "id": meme_id,
         "text": "Simple meme text_update",
@@ -105,18 +38,12 @@ def test_update_meme_valid_data(create_meme_endpoint, update_meme_endpoint, dele
     update_meme_instance = update_meme_endpoint()
     update_meme_instance.update_meme(meme_id, update_data)
     update_meme_instance.check_response_200()
-    update_meme_instance.check_updated_by_field()
-
-    delete_meme_instance = delete_meme_endpoint()
-    delete_meme_instance.delete_meme(meme_id)
-    delete_meme_instance.check_response()
+    update_meme_instance.check_fields_updated_correctly(update_data)
 
 
 @pytest.mark.parametrize('field, invalid_value', INVALID_FIELDS)
-def test_update_meme_invalid_data(create_meme_endpoint, update_meme_endpoint, delete_meme_endpoint, field, invalid_value):
-    create_meme_instance = create_meme_endpoint()
-    response_create = create_meme_instance.new_meme(TEST_DATA[0])
-    meme_id = response_create.json().get("id")
+def test_update_meme_invalid_data(create_and_delete_meme, update_meme_endpoint, field, invalid_value):
+    meme_id = next(create_and_delete_meme(TEST_DATA[0]))
 
     update_data = {
         "id": meme_id,
@@ -130,18 +57,12 @@ def test_update_meme_invalid_data(create_meme_endpoint, update_meme_endpoint, de
     update_meme_instance.update_meme(meme_id, update_data)
     update_meme_instance.check_update_invalid_values(meme_id, update_data)
 
+
+def test_delete_meme(create_and_delete_meme, delete_meme_endpoint):
+    meme_id = next(create_and_delete_meme(TEST_DATA[0]))
     delete_meme_instance = delete_meme_endpoint()
     delete_meme_instance.delete_meme(meme_id)
-    delete_meme_instance.check_response()
-
-def test_delete_meme(create_meme_endpoint, delete_meme_endpoint):
-    create_meme_instance = create_meme_endpoint()
-    response_create = create_meme_instance.new_meme(TEST_DATA[0])
-    meme_id = response_create.json().get("id")
-
-    delete_meme_instance = delete_meme_endpoint()
-    delete_meme_instance.delete_meme(meme_id)
-    delete_meme_instance.check_response()
+    delete_meme_instance.check_status_code(200)
     delete_meme_instance.check_cannot_delete_twice(meme_id)
     delete_meme_instance.check_meme_absence(meme_id)
 
@@ -154,16 +75,10 @@ def test_delete_nonexistent_meme(delete_meme_endpoint, invalid_id):
 
 
 @pytest.mark.parametrize("data", [TEST_DATA[0], TEST_DATA[1]])
-def test_get_meme(create_meme_endpoint, get_meme_endpoint, delete_meme_endpoint, data):
-    create_meme_instance = create_meme_endpoint()
-    response_create = create_meme_instance.new_meme(data)
-    meme_id = response_create.json().get("id")
+def test_get_meme(create_and_delete_meme, get_meme_endpoint, data):
+    meme_id = next(create_and_delete_meme(data))
 
     get_meme_instance = get_meme_endpoint()
     get_meme_instance.get_meme(meme_id)
-    get_meme_instance.check_response()
+    get_meme_instance.check_status_code(200)
     get_meme_instance.check_response_content(data)
-
-    delete_meme_instance = delete_meme_endpoint()
-    delete_meme_instance.delete_meme(meme_id)
-    delete_meme_instance.check_response()

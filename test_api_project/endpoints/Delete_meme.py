@@ -1,8 +1,10 @@
 import requests
 import allure
+from .base_endpoint import BaseEndpoint
 from .endpoint import Config
 
-class DeleteMeme:
+
+class DeleteMeme(BaseEndpoint):
     url = Config.url
 
     @allure.step("Delete meme by ID")
@@ -13,19 +15,15 @@ class DeleteMeme:
         )
         return self.response
 
-    @allure.step("Check response status code for DELETE")
-    def check_response(self):
-        assert self.response.status_code == 200, \
-            f"Expected status code 200, but got {self.response.status_code}: {self.response.text}"
-
     @allure.step("Check if meme is deleted")
     def check_meme_absence(self, meme_id):
         response_check = requests.get(
             f"{self.url}/{meme_id}",
             headers=Config.headers
         )
-        assert response_check.status_code == 404, \
+        assert response_check.status_code == 404, (
             f"Expected status code 404 for deleted meme, but got {response_check.status_code}: {response_check.text}"
+        )
 
     @allure.step("Check if meme cannot be deleted twice")
     def check_cannot_delete_twice(self, meme_id):
@@ -33,18 +31,20 @@ class DeleteMeme:
             f"{self.url}/{meme_id}",
             headers=Config.headers
         )
-        assert response_repeat_delete.status_code == 404, \
+        assert response_repeat_delete.status_code == 404, (
             f"Expected status code 404 for second delete, but got {response_repeat_delete.status_code}: {response_repeat_delete.text}"
+        )
 
-    @allure.step("Check attempt to delete non-existent meme")
+    @allure.step("Check attempt to delete a non-existent meme")
     def check_nonexistent_id(self, meme_id):
         response = requests.delete(
             f"{self.url}/{meme_id}",
             headers=Config.headers
         )
-        assert response.status_code == 404, \
+        assert response.status_code == 404, (
             f"Expected status code 404 for non-existent ID, but got {response.status_code}: {response.text}"
-
+        )
         if response.text:
-            assert "not found" in response.text.lower(), \
+            assert "not found" in response.text.lower(), (
                 f"Expected 'not found' in the response for non-existent ID, but got response text: {response.text}"
+            )

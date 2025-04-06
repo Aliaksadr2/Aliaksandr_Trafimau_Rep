@@ -1,12 +1,11 @@
 import requests
 import allure
-
+from .base_endpoint import BaseEndpoint
 from .endpoint import Config
 
-class CreateMeme:
+
+class CreateMeme(BaseEndpoint):
     url = Config.url
-    response = None
-    json = None
 
     @allure.step('Create new meme')
     def new_meme(self, payload):
@@ -20,14 +19,17 @@ class CreateMeme:
             self.json = self.response.json()
         return self.response
 
-    @allure.step('Check_response')
-    def check_response(self):
-        assert self.response.status_code == 200
+    @allure.step('Check response: status 200')
+    def check_response_200(self):
+        self.check_status_code(200)
 
-    @allure.step('Check_response_400')
+    @allure.step('Check response: status 400')
     def check_response_400(self):
-        assert self.response.status_code == 400, \
-            f"Expected status code 400, but got {self.response.status_code}"
+        self.check_status_code(400)
+
+    @allure.step('Check response: status 404')
+    def check_response_404(self):
+        self.check_status_code(404)
 
     @allure.step('Check response field: id')
     def check_id_field(self):
@@ -35,11 +37,6 @@ class CreateMeme:
         assert isinstance(self.json["id"], int), "'id' should be an integer"
 
     @allure.step('Check response field: updated_by')
-    def check_updated_by_field(self):
+    def check_updated_by_field_is_str(self):
         assert "updated_by" in self.json, "Missing 'updated_by' key in JSON response"
         assert isinstance(self.json["updated_by"], str), "'updated_by' should be a string"
-
-    @allure.step('Check_response_404')
-    def check_response_404(self):
-        assert self.response.status_code == 404, \
-            f"Expected status code 404, but got {self.response.status_code}: {self.response.text}"

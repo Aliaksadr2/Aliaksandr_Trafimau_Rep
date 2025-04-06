@@ -1,8 +1,10 @@
 import requests
 import allure
+from .base_endpoint import BaseEndpoint
 from .endpoint import Config
 
-class GetMeme:
+
+class GetMeme(BaseEndpoint):
     url = Config.url
 
     @allure.step("Get meme by ID")
@@ -13,13 +15,10 @@ class GetMeme:
         )
         return self.response
 
-    @allure.step("Check response status code for GET")
-    def check_response(self):
-        assert self.response.status_code == 200, \
-            f"Expected status code 200, but got {self.response.status_code}: {self.response.text}"
-
-    @allure.step("Check content of the response")
+    @allure.step("Check response content")
     def check_response_content(self, expected_data):
+        response_json = self.response.json()
         for key, value in expected_data.items():
-            assert self.response.json().get(key) == value, \
-                f"Expected '{key}' to be '{value}', but got '{self.response.json().get(key)}'"
+            assert response_json.get(key) == value, (
+                f"Expected '{key}' to be '{value}', but got '{response_json.get(key)}'"
+            )

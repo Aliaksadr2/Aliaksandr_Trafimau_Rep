@@ -1,8 +1,10 @@
 import requests
 import allure
+from .base_endpoint import BaseEndpoint
 from .endpoint import Config
 
-class UpdateMeme:
+
+class UpdateMeme(BaseEndpoint):
     url = Config.url
 
     @allure.step("Update meme by ID")
@@ -14,9 +16,9 @@ class UpdateMeme:
         )
         return self.response
 
-    @allure.step("Check response 200 after update")
+    @allure.step("Check response: status 200")
     def check_response_200(self):
-        assert self.response.status_code == 200, f"Expected status 200, but got {self.response.status_code}"
+        self.check_status_code(200)
 
     @allure.step("Check response contains 'updated_by'")
     def check_updated_by_field(self):
@@ -30,4 +32,21 @@ class UpdateMeme:
         assert response.status_code == 400, (
             f"Expected status 400 for invalid value in field, but got {response.status_code}. "
             f"Response: {response.text}"
+        )
+
+    @allure.step("Verify that fields are updated correctly")
+    def check_fields_updated_correctly(self, expected_data):
+        response_json = self.response.json()
+
+        assert response_json["text"] == expected_data["text"], (
+            f"Expected 'text' to be {expected_data['text']}, but got {response_json['text']}"
+        )
+        assert response_json["url"] == expected_data["url"], (
+            f"Expected 'url' to be {expected_data['url']}, but got {response_json['url']}"
+        )
+        assert response_json["tags"] == expected_data["tags"], (
+            f"Expected 'tags' to be {expected_data['tags']}, but got {response_json['tags']}"
+        )
+        assert response_json["info"] == expected_data["info"], (
+            f"Expected 'info' to be {expected_data['info']}, but got {response_json['info']}"
         )
