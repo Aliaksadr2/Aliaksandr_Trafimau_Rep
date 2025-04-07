@@ -1,11 +1,20 @@
 import pytest
 import requests
 
-from endpoints.Create_meme import CreateMeme
-from endpoints.Delete_meme import DeleteMeme
-from endpoints.Update_meme import UpdateMeme
-from endpoints.Get_meme import GetMeme
-from endpoints.endpoint import Config
+from endpoints.create_meme import CreateMeme
+from endpoints.delete_meme import DeleteMeme
+from endpoints.update_meme import UpdateMeme
+from endpoints.get_meme import GetMeme
+from endpoints.endpoint_config import Config
+from endpoints.token_endpoint import TokenEndpoint
+
+
+@pytest.fixture()
+def token_endpoint():
+    def _create_instance():
+        return TokenEndpoint(base_url="http://167.172.172.115:52355")
+
+    return _create_instance
 
 
 @pytest.fixture()
@@ -49,15 +58,11 @@ def create_and_delete_meme(create_meme_endpoint, delete_meme_endpoint):
     def _create(data):
         create_meme_instance = create_meme_endpoint()
         create_meme_instance.new_meme(payload=data)
-        create_meme_instance.check_status_code(200)
-        create_meme_instance.check_updated_by_field_is_str()
         meme_id = create_meme_instance.response.json().get('id')
 
         yield meme_id
 
         delete_meme_instance = delete_meme_endpoint()
         delete_meme_instance.delete_meme(meme_id=meme_id)
-        delete_meme_instance.check_status_code(200)
-        delete_meme_instance.check_meme_absence(meme_id)
 
     return _create

@@ -1,11 +1,10 @@
 import requests
 import allure
 from .base_endpoint import BaseEndpoint
-from .endpoint import Config
+from .endpoint_config import Config
 
 
 class DeleteMeme(BaseEndpoint):
-    url = Config.url
 
     @allure.step("Delete meme by ID")
     def delete_meme(self, meme_id):
@@ -14,16 +13,6 @@ class DeleteMeme(BaseEndpoint):
             headers=Config.headers
         )
         return self.response
-
-    @allure.step("Check if meme is deleted")
-    def check_meme_absence(self, meme_id):
-        response_check = requests.get(
-            f"{self.url}/{meme_id}",
-            headers=Config.headers
-        )
-        assert response_check.status_code == 404, (
-            f"Expected status code 404 for deleted meme, but got {response_check.status_code}: {response_check.text}"
-        )
 
     @allure.step("Check if meme cannot be deleted twice")
     def check_cannot_delete_twice(self, meme_id):

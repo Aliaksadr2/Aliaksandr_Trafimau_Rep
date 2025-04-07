@@ -1,11 +1,10 @@
 import requests
 import allure
 from .base_endpoint import BaseEndpoint
-from .endpoint import Config
+from .endpoint_config import Config
 
 
 class CreateMeme(BaseEndpoint):
-    url = Config.url
 
     @allure.step('Create new meme')
     def new_meme(self, payload):
@@ -19,20 +18,8 @@ class CreateMeme(BaseEndpoint):
             self.json = self.response.json()
         return self.response
 
-    @allure.step('Check response: status 200')
-    def check_response_200(self):
-        self.check_status_code(200)
-
-    @allure.step('Check response: status 400')
-    def check_response_400(self):
-        self.check_status_code(400)
-
-    @allure.step('Check response: status 404')
-    def check_response_404(self):
-        self.check_status_code(404)
-
     @allure.step('Check response field: id')
-    def check_id_field(self):
+    def check_id_field_is_int(self):
         assert "id" in self.json, "Missing 'id' key in JSON response"
         assert isinstance(self.json["id"], int), "'id' should be an integer"
 
