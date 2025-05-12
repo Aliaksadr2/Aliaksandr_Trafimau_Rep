@@ -1,1 +1,22 @@
+name: Python autotests
 
+on: [push]
+
+jobs:
+  run-tests:
+  runs-on: ubuntu-latets
+  name: Run autotests
+  steps:
+    - name: Checkout autotests
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13.1'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Run tests
+      run: pytest
